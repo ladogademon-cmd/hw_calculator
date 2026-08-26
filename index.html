@@ -13,6 +13,7 @@
     min-height: 100vh;
     padding: 16px;
     -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
   }
   .container { max-width: 900px; margin: 0 auto; }
   
@@ -249,7 +250,7 @@
 // Translations
 const translations = {
   ru: {
-    title: "⚔️ Калькулятор очков — Схватка",
+    title: "️ Калькулятор очков — Схватка",
     totalLabel: "Итого за день:",
     resetBtn: "🧹 Сбросить",
     noTasksSunday: "📭 На воскресенье заданий нет.<br>Выберите другой день.",
@@ -341,7 +342,7 @@ const translations = {
       ],
       "Суббота": [
         ["Потрать 10 осколков реликвии", 10, 225000],
-        ["Используй ускорение исследований на 1 мин.", 1, 300],
+        ["Используй ускорение исследований на 1 мин.", 1, 3000],
         ["Победи босса 1 раз", 1, 850],
         ["Зачисти Лагерь Бандитов 1 раз", 1, 2500],
         ["Открой 1 сундук в Башне", 1, 4000],
@@ -447,7 +448,7 @@ const translations = {
       ],
       "Saturday": [
         ["Spend 10 Relic Shards", 10, 225000],
-        ["Use 1 min research speedup", 1, 300],
+        ["Use 1 min research speedup", 1, 3000],
         ["Defeat boss 1 time", 1, 850],
         ["Clear Bandit Camp 1 time", 1, 2500],
         ["Open 1 chest in Tower", 1, 4000],
@@ -474,6 +475,46 @@ if (!translations[currentLang].tasks[currentDay]) {
 const inputs = {};
 DAY_ORDER_RU.forEach(d => inputs[d] = new Array(translations.ru.tasks[d].length).fill(0));
 DAY_ORDER_EN.forEach(d => inputs[d] = new Array(translations.en.tasks[d].length).fill(0));
+
+// Swipe variables
+let touchStartX = 0;
+let touchEndX = 0;
+const SWIPE_THRESHOLD = 50; // Минимальное расстояние для свайпа
+
+// Touch event handlers
+function handleTouchStart(e) {
+  touchStartX = e.changedTouches[0].screenX;
+}
+
+function handleTouchEnd(e) {
+  touchEndX = e.changedTouches[0].screenX;
+  handleSwipe();
+}
+
+function handleSwipe() {
+  const swipeDistance = touchEndX - touchStartX;
+  
+  if (Math.abs(swipeDistance) < SWIPE_THRESHOLD) return;
+  
+  const dayOrder = currentLang === 'ru' ? DAY_ORDER_RU : DAY_ORDER_EN;
+  const currentIndex = dayOrder.indexOf(currentDay);
+  
+  if (swipeDistance > 0) {
+    // Свайп вправо - предыдущий день
+    if (currentIndex > 0) {
+      currentDay = dayOrder[currentIndex - 1];
+      renderTabs();
+      renderDay();
+    }
+  } else {
+    // Свайп влево - следующий день
+    if (currentIndex < dayOrder.length - 1) {
+      currentDay = dayOrder[currentIndex + 1];
+      renderTabs();
+      renderDay();
+    }
+  }
+}
 
 function setLanguage(lang) {
   currentLang = lang;
@@ -571,6 +612,12 @@ function renderDay() {
     panel.appendChild(row);
   });
   updateTotal();
+  
+  // Add touch event listeners to panel
+  panel.removeEventListener('touchstart', handleTouchStart);
+  panel.removeEventListener('touchend', handleTouchEnd);
+  panel.addEventListener('touchstart', handleTouchStart, {passive: true});
+  panel.addEventListener('touchend', handleTouchEnd, {passive: true});
 }
 
 function updateTotal() {
