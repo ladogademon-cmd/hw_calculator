@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Калькулятор очков — Схватка</title>
+<title>Points Calculator — Guild Versus</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -15,6 +15,32 @@
     -webkit-tap-highlight-color: transparent;
   }
   .container { max-width: 900px; margin: 0 auto; }
+  
+  /* Language Switcher */
+  .lang-switcher {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+  .lang-btn {
+    padding: 6px 14px;
+    background: #171717;
+    border: 1px solid #404040;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #a3a3a3;
+    transition: all 0.2s;
+  }
+  .lang-btn:hover { background: #262626; color: #e5e5e5; }
+  .lang-btn.active {
+    background: #f59e0b;
+    color: #171717;
+    border-color: #f59e0b;
+  }
+
   h1 {
     text-align: center;
     font-size: 26px;
@@ -160,6 +186,8 @@
 
   /* Мобильная версия */
   @media (max-width: 640px) {
+    .lang-switcher { justify-content: center; }
+    .lang-btn { padding: 5px 12px; font-size: 12px; }
     body { padding: 10px; }
     h1 { font-size: 22px; margin-bottom: 14px; }
     .tabs { gap: 4px; margin-bottom: 14px; }
@@ -201,129 +229,293 @@
 </head>
 <body>
 <div class="container">
-  <h1>⚔️ Калькулятор очков — Схватка</h1>
+  <div class="lang-switcher">
+    <button class="lang-btn active" onclick="setLanguage('ru')">RU</button>
+    <button class="lang-btn" onclick="setLanguage('en')">EN</button>
+  </div>
+  <h1 data-i18n="title">⚔️ Калькулятор очков — Схватка</h1>
   <div class="tabs" id="tabs"></div>
   <div class="day-panel" id="dayPanel"></div>
   <div class="total-bar">
     <div>
-      <div class="total-label">Итого за день:</div>
+      <div class="total-label" data-i18n="totalLabel">Итого за день:</div>
       <div class="total-value" id="totalValue">0</div>
     </div>
-    <button class="reset-btn" onclick="resetDay()">🧹 Сбросить</button>
+    <button class="reset-btn" onclick="resetDay()" data-i18n="resetBtn">🧹 Сбросить</button>
   </div>
 </div>
 
 <script>
-const DAYS = {
-  "Понедельник": [
-    ["Увеличь на 3 мощь Титанов", 3, 100],
-    ["Победи 1 Монстра ур. 1 или выше", 1, 2000],
-    ["Зачисти Лагерь Бандитов 1 раз", 1, 2500],
-    ["Собери 3000 Еды на карте", 3000, 10],
-    ["Собери 3000 Дерева на карте", 3000, 10],
-    ["Собери 600 Камня на карте", 600, 10],
-    ["Собери 150 Железа на карте", 150, 10],
-    ["Победи босса 1 раз", 1, 850],
-    ["Открой 1 раз сферу призыва", 1, 1500],
-    ["Открой 1 раз сферу стихий", 1, 1200],
-    ["Сразись 1 раз на Арене", 1, 6000],
-    ["Открой 1 сундук в Башне", 1, 4000],
-    ["Выполни 1 ежедневное задание", 1, 2000],
-    ["Потрать 15 Искр мощи", 15, 30],
-    ["Открой 1 раз Героический сундук", 1, 4000],
-    ["Получи 1 VIP очков", 1, 100]
-  ],
-  "Вторник": [
-    ["Победи 1 Монстра ур. 1 или выше", 1, 2000],
-    ["Победи босса 1 раз", 1, 850],
-    ["Потрать 1 фрагмент артефактов Героя", 1, 1200],
-    ["Потрать 15 камней облика Героя", 15, 700],
-    ["Открой 1 раз Артефактный сундук", 1, 750],
-    ["Сразись 1 раз на Арене", 1, 6000],
-    ["Начни 1 Экспедицию", 1, 5000],
-    ["Открой 1 сундук в Башне", 1, 4000],
-    ["Выполни 1 ежедневное задание", 1, 2000],
-    ["Используй 100 зелий Титана", 100, 150],
-    ["Получи 1 VIP очков", 1, 100]
-  ],
-  "Среда": [
-    ["Повысь мощь исследованиями на 1", 1, 30],
-    ["Используй ускорение исследований на 1 мин", 1, 300],
-    ["Зачисти Лагерь Бандитов", 1, 2500],
-    ["Надень 1 красный предмет", 1, 1250000],
-    ["Надень 1 оранжевый предмет", 1, 160000],
-    ["Надень 1 фиолетовый предмет", 1, 27000],
-    ["Надень 1 синий предмет", 1, 5000],
-    ["Надень 1 зеленый предмет", 1, 1000],
-    ["Надень 1 белый предмет", 1, 400],
-    ["Потрать 1 фрагмент артефактов Героев", 1, 1200],
-    ["Выполни 1 ежедневное задание", 1, 2000],
-    ["Открой 1 сундук в Башне", 1, 4000],
-    ["Получи 1 Камень души Героя", 1, 500],
-    ["Потрать 25 Пыльцы Феи", 25, 50],
-    ["Потрать 3 Энергии", 3, 100],
-    ["Получи 1 VIP очков", 1, 100]
-  ],
-  "Четверг": [
-    ["Потрать 1 руководство командиров", 1, 5000],
-    ["Победи 1 Монстра ур. 1 или выше", 1, 2000],
-    ["Потрать 100 рунных сфер", 100, 50000],
-    ["Потрать 20 рунных камней", 20, 100],
-    ["Получи 1 мощи героя", 1, 30],
-    ["Сразись 1 раз на Гранд Арене", 1, 6000],
-    ["Сразись 1 раз на Арене", 1, 6000],
-    ["Выполни 1 ежедневноное задание", 1, 2000],
-    ["Потрать 15 Камней облика Титана", 15, 100],
-    ["Открой 1 раз Героический сундук", 1, 4000],
-    ["Получи 1 VIP очков", 1, 100]
-  ],
-  "Пятница": [
-    ["Зачисти Лагерь Бандитов", 1, 2500],
-    ["Надень 1 красный предмет", 1, 1250000],
-    ["Надень 1 оранжевый предмет", 1, 160000],
-    ["Надень 1 фиолетовый предмет", 1, 27000],
-    ["Надень 1 синий предмет", 1, 5000],
-    ["Надень 1 зеленый предмет", 1, 1000],
-    ["Надень 1 белый предмет", 1, 400],
-    ["Потрать 15 Камней облика Героя", 15, 700],
-    ["Открой 1 раз сферу призыва", 1, 1500],
-    ["Выполни 1 ежедневное задание", 1, 2000],
-    ["Начни 1 Экспедицию", 1, 5000],
-    ["Сразись 1 раз на Арене", 1, 6000],
-    ["Потрать 25 Пыльцы Феи", 25, 50],
-    ["Получи 1 VIP очков", 1, 100]
-  ],
-  "Суббота": [
-    ["Потрать 10 осколков реликвии", 10, 225000],
-    ["Используй ускорение исследований на 1 мин.", 1, 300],
-    ["Победи босса 1 раз", 1, 850],
-    ["Зачисти Лагерь Бандитов 1 раз", 1, 2500],
-    ["Открой 1 сундук в Башне", 1, 4000],
-    ["Сразись 1 раз на Арене", 1, 6000],
-    ["Выполни 1 ежедневное задание", 1, 2000],
-    ["Используй 100 зелий Титана", 100, 150],
-    ["Потрать 15 кристаллов мастерства", 15, 200],
-    ["Потрать 1 Ядро Хаоса", 1, 3000],
-    ["Получи 1 VIP очков", 1, 100]
-  ]
+// Translations
+const translations = {
+  ru: {
+    title: "⚔️ Калькулятор очков — Схватка",
+    totalLabel: "Итого за день:",
+    resetBtn: "🧹 Сбросить",
+    noTasksSunday: "📭 На воскресенье заданий нет.<br>Выберите другой день.",
+    confirmReset: "Обнулить все значения за ",
+    points: "оч.",
+    earned: "оч.",
+    days: {
+      full: ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"],
+      short: ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"]
+    },
+    tasks: {
+      "Понедельник": [
+        ["Увеличь на 3 мощь Титанов", 3, 100],
+        ["Победи 1 Монстра ур. 1 или выше", 1, 2000],
+        ["Зачисти Лагерь Бандитов 1 раз", 1, 2500],
+        ["Собери 3000 Еды на карте", 3000, 10],
+        ["Собери 3000 Дерева на карте", 3000, 10],
+        ["Собери 600 Камня на карте", 600, 10],
+        ["Собери 150 Железа на карте", 150, 10],
+        ["Победи босса 1 раз", 1, 850],
+        ["Открой 1 раз сферу призыва", 1, 1500],
+        ["Открой 1 раз сферу стихий", 1, 1200],
+        ["Сразись 1 раз на Арене", 1, 6000],
+        ["Открой 1 сундук в Башне", 1, 4000],
+        ["Выполни 1 ежедневное задание", 1, 2000],
+        ["Потрать 15 Искр мощи", 15, 30],
+        ["Открой 1 раз Героический сундук", 1, 4000],
+        ["Получи 1 VIP очков", 1, 100]
+      ],
+      "Вторник": [
+        ["Победи 1 Монстра ур. 1 или выше", 1, 2000],
+        ["Победи босса 1 раз", 1, 850],
+        ["Потрать 1 фрагмент артефактов Героя", 1, 1200],
+        ["Потрать 15 камней облика Героя", 15, 700],
+        ["Открой 1 раз Артефактный сундук", 1, 750],
+        ["Сразись 1 раз на Арене", 1, 6000],
+        ["Начни 1 Экспедицию", 1, 5000],
+        ["Открой 1 сундук в Башне", 1, 4000],
+        ["Выполни 1 ежедневное задание", 1, 2000],
+        ["Используй 100 зелий Титана", 100, 150],
+        ["Получи 1 VIP очков", 1, 100]
+      ],
+      "Среда": [
+        ["Повысь мощь исследованиями на 1", 1, 30],
+        ["Используй ускорение исследований на 1 мин", 1, 300],
+        ["Зачисти Лагерь Бандитов", 1, 2500],
+        ["Надень 1 красный предмет", 1, 1250000],
+        ["Надень 1 оранжевый предмет", 1, 160000],
+        ["Надень 1 фиолетовый предмет", 1, 27000],
+        ["Надень 1 синий предмет", 1, 5000],
+        ["Надень 1 зеленый предмет", 1, 1000],
+        ["Надень 1 белый предмет", 1, 400],
+        ["Потрать 1 фрагмент артефактов Героев", 1, 1200],
+        ["Выполни 1 ежедневное задание", 1, 2000],
+        ["Открой 1 сундук в Башне", 1, 4000],
+        ["Получи 1 Камень души Героя", 1, 500],
+        ["Потрать 25 Пыльцы Феи", 25, 50],
+        ["Потрать 3 Энергии", 3, 100],
+        ["Получи 1 VIP очков", 1, 100]
+      ],
+      "Четверг": [
+        ["Потрать 1 руководство командиров", 1, 5000],
+        ["Победи 1 Монстра ур. 1 или выше", 1, 2000],
+        ["Потрать 100 рунных сфер", 100, 50000],
+        ["Потрать 20 рунных камней", 20, 100],
+        ["Получи 1 мощи героя", 1, 30],
+        ["Сразись 1 раз на Гранд Арене", 1, 6000],
+        ["Сразись 1 раз на Арене", 1, 6000],
+        ["Выполни 1 ежедневноное задание", 1, 2000],
+        ["Потрать 15 Камней облика Титана", 15, 100],
+        ["Открой 1 раз Героический сундук", 1, 4000],
+        ["Получи 1 VIP очков", 1, 100]
+      ],
+      "Пятница": [
+        ["Зачисти Лагерь Бандитов", 1, 2500],
+        ["Надень 1 красный предмет", 1, 1250000],
+        ["Надень 1 оранжевый предмет", 1, 160000],
+        ["Надень 1 фиолетовый предмет", 1, 27000],
+        ["Надень 1 синий предмет", 1, 5000],
+        ["Надень 1 зеленый предмет", 1, 1000],
+        ["Надень 1 белый предмет", 1, 400],
+        ["Потрать 15 Камней облика Героя", 15, 700],
+        ["Открой 1 раз сферу призыва", 1, 1500],
+        ["Выполни 1 ежедневное задание", 1, 2000],
+        ["Начни 1 Экспедицию", 1, 5000],
+        ["Сразись 1 раз на Арене", 1, 6000],
+        ["Потрать 25 Пыльцы Феи", 25, 50],
+        ["Получи 1 VIP очков", 1, 100]
+      ],
+      "Суббота": [
+        ["Потрать 10 осколков реликвии", 10, 225000],
+        ["Используй ускорение исследований на 1 мин.", 1, 300],
+        ["Победи босса 1 раз", 1, 850],
+        ["Зачисти Лагерь Бандитов 1 раз", 1, 2500],
+        ["Открой 1 сундук в Башне", 1, 4000],
+        ["Сразись 1 раз на Арене", 1, 6000],
+        ["Выполни 1 ежедневное задание", 1, 2000],
+        ["Используй 100 зелий Титана", 100, 150],
+        ["Потрать 15 кристаллов мастерства", 15, 200],
+        ["Потрать 1 Ядро Хаоса", 1, 3000],
+        ["Получи 1 VIP очков", 1, 100]
+      ]
+    }
+  },
+  en: {
+    title: "⚔️ Points Calculator — Guild Versus",
+    totalLabel: "Total for the day:",
+    resetBtn: "🧹 Reset",
+    noTasksSunday: "📭 No tasks for Sunday.<br>Select another day.",
+    confirmReset: "Reset all values for ",
+    points: "pts",
+    earned: "pts",
+    days: {
+      full: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+      short: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    },
+    tasks: {
+      "Monday": [
+        ["Increase Titans Power by 3", 3, 100],
+        ["Defeat 1 Monster lvl 1 or higher", 1, 2000],
+        ["Clear Bandit Camp 1 time", 1, 2500],
+        ["Collect 3000 Food on the map", 3000, 10],
+        ["Collect 3000 Wood on the map", 3000, 10],
+        ["Collect 600 Stone on the map", 600, 10],
+        ["Collect 150 Iron on the map", 150, 10],
+        ["Defeat boss 1 time", 1, 850],
+        ["Open Summon Sphere 1 time", 1, 1500],
+        ["Open Elemental Sphere 1 time", 1, 1200],
+        ["Fight in Arena 1 time", 1, 6000],
+        ["Open 1 chest in Tower", 1, 4000],
+        ["Complete 1 daily quest", 1, 2000],
+        ["Spend 15 Power Sparks", 15, 30],
+        ["Open Heroic Chest 1 time", 1, 4000],
+        ["Get 1 VIP point", 1, 100]
+      ],
+      "Tuesday": [
+        ["Defeat 1 Monster lvl 1 or higher", 1, 2000],
+        ["Defeat boss 1 time", 1, 850],
+        ["Spend 1 Hero Artifact Fragment", 1, 1200],
+        ["Spend 15 Hero Appearance Stones", 15, 700],
+        ["Open Artifact Chest 1 time", 1, 750],
+        ["Fight in Arena 1 time", 1, 6000],
+        ["Start 1 Expedition", 1, 5000],
+        ["Open 1 chest in Tower", 1, 4000],
+        ["Complete 1 daily quest", 1, 2000],
+        ["Use 100 Titan Potions", 100, 150],
+        ["Get 1 VIP point", 1, 100]
+      ],
+      "Wednesday": [
+        ["Increase research power by 1", 1, 30],
+        ["Use 1 min research speedup", 1, 300],
+        ["Clear Bandit Camp", 1, 2500],
+        ["Equip 1 red item", 1, 1250000],
+        ["Equip 1 orange item", 1, 160000],
+        ["Equip 1 purple item", 1, 27000],
+        ["Equip 1 blue item", 1, 5000],
+        ["Equip 1 green item", 1, 1000],
+        ["Equip 1 white item", 1, 400],
+        ["Spend 1 Hero Artifact Fragment", 1, 1200],
+        ["Complete 1 daily quest", 1, 2000],
+        ["Open 1 chest in Tower", 1, 4000],
+        ["Get 1 Hero Soul Stone", 1, 500],
+        ["Spend 25 Fairy Dust", 25, 50],
+        ["Spend 3 Energy", 3, 100],
+        ["Get 1 VIP point", 1, 100]
+      ],
+      "Thursday": [
+        ["Spend 1 Commander's Manual", 1, 5000],
+        ["Defeat 1 Monster lvl 1 or higher", 1, 2000],
+        ["Spend 100 Rune Spheres", 100, 50000],
+        ["Spend 20 Rune Stones", 20, 100],
+        ["Get 1 hero power", 1, 30],
+        ["Fight in Grand Arena 1 time", 1, 6000],
+        ["Fight in Arena 1 time", 1, 6000],
+        ["Complete 1 daily quest", 1, 2000],
+        ["Spend 15 Titan Appearance Stones", 15, 100],
+        ["Open Heroic Chest 1 time", 1, 4000],
+        ["Get 1 VIP point", 1, 100]
+      ],
+      "Friday": [
+        ["Clear Bandit Camp", 1, 2500],
+        ["Equip 1 red item", 1, 1250000],
+        ["Equip 1 orange item", 1, 160000],
+        ["Equip 1 purple item", 1, 27000],
+        ["Equip 1 blue item", 1, 5000],
+        ["Equip 1 green item", 1, 1000],
+        ["Equip 1 white item", 1, 400],
+        ["Spend 15 Hero Appearance Stones", 15, 700],
+        ["Open Summon Sphere 1 time", 1, 1500],
+        ["Complete 1 daily quest", 1, 2000],
+        ["Start 1 Expedition", 1, 5000],
+        ["Fight in Arena 1 time", 1, 6000],
+        ["Spend 25 Fairy Dust", 25, 50],
+        ["Get 1 VIP point", 1, 100]
+      ],
+      "Saturday": [
+        ["Spend 10 Relic Shards", 10, 225000],
+        ["Use 1 min research speedup", 1, 300],
+        ["Defeat boss 1 time", 1, 850],
+        ["Clear Bandit Camp 1 time", 1, 2500],
+        ["Open 1 chest in Tower", 1, 4000],
+        ["Fight in Arena 1 time", 1, 6000],
+        ["Complete 1 daily quest", 1, 2000],
+        ["Use 100 Titan Potions", 100, 150],
+        ["Spend 15 Mastery Crystals", 15, 200],
+        ["Spend 1 Chaos Core", 1, 3000],
+        ["Get 1 VIP point", 1, 100]
+      ]
+    }
+  }
 };
 
-const DAY_NAMES = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
-const DAY_SHORT_NAMES = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
-const DAY_ORDER = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
+const DAY_ORDER_RU = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
+const DAY_ORDER_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-let currentDay = DAY_NAMES[new Date().getDay()];
-if (!DAYS[currentDay]) currentDay = "Понедельник";
+let currentLang = localStorage.getItem('skhatka_lang') || 'ru';
+let currentDay = translations[currentLang].days.full[new Date().getDay()];
+if (!translations[currentLang].tasks[currentDay]) {
+  currentDay = currentLang === 'ru' ? "Понедельник" : "Monday";
+}
 
 const inputs = {};
-DAY_ORDER.forEach(d => inputs[d] = new Array(DAYS[d].length).fill(0));
+DAY_ORDER_RU.forEach(d => inputs[d] = new Array(translations.ru.tasks[d].length).fill(0));
+DAY_ORDER_EN.forEach(d => inputs[d] = new Array(translations.en.tasks[d].length).fill(0));
+
+function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('skhatka_lang', lang);
+  
+  // Update buttons
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.textContent.toLowerCase() === lang) {
+      btn.classList.add('active');
+    }
+  });
+  
+  // Update current day
+  const todayIndex = new Date().getDay();
+  currentDay = translations[lang].days.full[todayIndex];
+  if (!translations[lang].tasks[currentDay]) {
+    currentDay = lang === 'ru' ? "Понедельник" : "Monday";
+  }
+  
+  // Update UI texts
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (translations[lang][key]) {
+      el.innerHTML = translations[lang][key];
+    }
+  });
+  
+  renderTabs();
+  renderDay();
+}
 
 function renderTabs() {
   const tabsEl = document.getElementById("tabs");
   tabsEl.innerHTML = "";
-  const todayName = DAY_NAMES[new Date().getDay()];
-  DAY_ORDER.forEach((day, index) => {
-    const shortName = DAY_SHORT_NAMES[index + 1];
+  const t = translations[currentLang];
+  const todayName = t.days.full[new Date().getDay()];
+  const dayOrder = currentLang === 'ru' ? DAY_ORDER_RU : DAY_ORDER_EN;
+  
+  dayOrder.forEach((day, index) => {
+    const shortName = t.days.short[index + 1];
     const tab = document.createElement("div");
     tab.className = "tab" + (day === currentDay ? " active" : "") + (day === todayName ? " today" : "");
     tab.innerHTML = `<span class="tab-full">${day}</span><span class="tab-short">${shortName}</span>`;
@@ -340,33 +532,40 @@ function calcEarned(required, points, qty) {
 
 function renderDay() {
   const panel = document.getElementById("dayPanel");
-  const tasks = DAYS[currentDay];
+  const t = translations[currentLang];
+  const tasks = t.tasks[currentDay];
+  
   if (!tasks) {
-    panel.innerHTML = '<div class="empty">📭 На воскресенье заданий нет.<br>Выберите другой день.</div>';
-    document.getElementById("totalValue").textContent = "0 очков";
+    panel.innerHTML = `<div class="empty">${t.noTasksSunday}</div>`;
+    document.getElementById("totalValue").textContent = "0 " + t.points;
     return;
   }
+  
+  const dayOrder = currentLang === 'ru' ? DAY_ORDER_RU : DAY_ORDER_EN;
+  const dayIndex = dayOrder.indexOf(currentDay);
+  const inputsArray = inputs[currentDay] || inputs[DAY_ORDER_RU[dayIndex]] || [];
+  
   panel.innerHTML = "";
-  tasks.forEach((t, i) => {
-    const [name, required, points] = t;
-    const qty = inputs[currentDay][i];
+  tasks.forEach((task, i) => {
+    const [name, required, points] = task;
+    const qty = inputsArray[i] || 0;
     const earned = calcEarned(required, points, qty);
     const row = document.createElement("div");
     row.className = "task";
     row.innerHTML = `
       <div class="task-name">${name}</div>
-      <div class="task-pts">${points.toLocaleString('ru-RU')} <small>оч.</small></div>
+      <div class="task-pts">${points.toLocaleString('ru-RU')} <small>${t.points}</small></div>
       <div class="task-input-wrap">
         <input type="number" class="task-input" min="0" inputmode="numeric" value="${qty || ''}" placeholder="0" data-idx="${i}">
       </div>
-      <div class="task-earned" data-idx="${i}">${earned > 0 ? earned.toLocaleString('ru-RU') + ' оч.' : ''}</div>
+      <div class="task-earned" data-idx="${i}">${earned > 0 ? earned.toLocaleString('ru-RU') + ' ' + t.earned : ''}</div>
     `;
     const input = row.querySelector("input");
     input.addEventListener("input", (e) => {
       const v = parseInt(e.target.value) || 0;
-      inputs[currentDay][i] = v;
+      inputsArray[i] = v;
       const earned = calcEarned(required, points, v);
-      row.querySelector(".task-earned").textContent = earned > 0 ? earned.toLocaleString('ru-RU') + ' оч.' : '';
+      row.querySelector(".task-earned").textContent = earned > 0 ? earned.toLocaleString('ru-RU') + ' ' + t.earned : '';
       updateTotal();
     });
     panel.appendChild(row);
@@ -375,22 +574,34 @@ function renderDay() {
 }
 
 function updateTotal() {
-  const tasks = DAYS[currentDay] || [];
+  const t = translations[currentLang];
+  const tasks = t.tasks[currentDay] || [];
+  const dayOrder = currentLang === 'ru' ? DAY_ORDER_RU : DAY_ORDER_EN;
+  const dayIndex = dayOrder.indexOf(currentDay);
+  const inputsArray = inputs[currentDay] || inputs[DAY_ORDER_RU[dayIndex]] || [];
+  
   let total = 0;
-  tasks.forEach((t, i) => {
-    total += calcEarned(t[1], t[2], inputs[currentDay][i] || 0);
+  tasks.forEach((task, i) => {
+    total += calcEarned(task[1], task[2], inputsArray[i] || 0);
   });
-  document.getElementById("totalValue").textContent = total.toLocaleString('ru-RU') + " очков";
+  document.getElementById("totalValue").textContent = total.toLocaleString('ru-RU') + " " + t.points;
 }
 
 function resetDay() {
-  if (!confirm("Обнулить все значения за " + currentDay + "?")) return;
-  inputs[currentDay] = new Array(DAYS[currentDay].length).fill(0);
+  const t = translations[currentLang];
+  if (!confirm(t.confirmReset + currentDay + "?")) return;
+  
+  const dayOrder = currentLang === 'ru' ? DAY_ORDER_RU : DAY_ORDER_EN;
+  const dayIndex = dayOrder.indexOf(currentDay);
+  const ruDay = DAY_ORDER_RU[dayIndex];
+  inputs[ruDay] = new Array(translations.ru.tasks[ruDay].length).fill(0);
+  inputs[currentDay] = new Array(tasks.length).fill(0);
+  
   renderDay();
 }
 
-renderTabs();
-renderDay();
+// Initialize
+setLanguage(currentLang);
 </script>
 </body>
 </html>
