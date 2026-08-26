@@ -95,6 +95,35 @@
     border-radius: 12px;
     padding: 16px;
   }
+  
+  /* Анимации перелистывания */
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(40px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(-40px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  .animate-slide-left {
+    animation: slideInLeft 0.3s ease-out;
+  }
+  .animate-slide-right {
+    animation: slideInRight 0.3s ease-out;
+  }
+  
   .task {
     display: grid;
     grid-template-columns: 1fr 100px 90px 110px;
@@ -250,10 +279,10 @@
 // Translations
 const translations = {
   ru: {
-    title: "️ Калькулятор очков — Схватка",
+    title: "⚔️ Калькулятор очков — Схватка",
     totalLabel: "Итого за день:",
     resetBtn: "🧹 Сбросить",
-    noTasksSunday: "📭 На воскресенье заданий нет.<br>Выберите другой день.",
+    noTasksSunday: " На воскресенье заданий нет.<br>Выберите другой день.",
     confirmReset: "Обнулить все значения за ",
     points: "оч.",
     earned: "оч.",
@@ -342,7 +371,7 @@ const translations = {
       ],
       "Суббота": [
         ["Потрать 10 осколков реликвии", 10, 225000],
-        ["Используй ускорение исследований на 1 мин.", 1, 3000],
+        ["Используй ускорение исследований на 1 мин.", 1, 300],
         ["Победи босса 1 раз", 1, 850],
         ["Зачисти Лагерь Бандитов 1 раз", 1, 2500],
         ["Открой 1 сундук в Башне", 1, 4000],
@@ -358,8 +387,8 @@ const translations = {
   en: {
     title: "⚔️ Points Calculator — Guild Versus",
     totalLabel: "Total for the day:",
-    resetBtn: "🧹 Reset",
-    noTasksSunday: "📭 No tasks for Sunday.<br>Select another day.",
+    resetBtn: " Reset",
+    noTasksSunday: " No tasks for Sunday.<br>Select another day.",
     confirmReset: "Reset all values for ",
     points: "pts",
     earned: "pts",
@@ -448,7 +477,7 @@ const translations = {
       ],
       "Saturday": [
         ["Spend 10 Relic Shards", 10, 225000],
-        ["Use 1 min research speedup", 1, 3000],
+        ["Use 1 min research speedup", 1, 300],
         ["Defeat boss 1 time", 1, 850],
         ["Clear Bandit Camp 1 time", 1, 2500],
         ["Open 1 chest in Tower", 1, 4000],
@@ -479,9 +508,8 @@ DAY_ORDER_EN.forEach(d => inputs[d] = new Array(translations.en.tasks[d].length)
 // Swipe variables
 let touchStartX = 0;
 let touchEndX = 0;
-const SWIPE_THRESHOLD = 50; // Минимальное расстояние для свайпа
+const SWIPE_THRESHOLD = 50;
 
-// Touch event handlers
 function handleTouchStart(e) {
   touchStartX = e.changedTouches[0].screenX;
 }
@@ -504,14 +532,14 @@ function handleSwipe() {
     if (currentIndex > 0) {
       currentDay = dayOrder[currentIndex - 1];
       renderTabs();
-      renderDay();
+      renderDay('right');
     }
   } else {
     // Свайп влево - следующий день
     if (currentIndex < dayOrder.length - 1) {
       currentDay = dayOrder[currentIndex + 1];
       renderTabs();
-      renderDay();
+      renderDay('left');
     }
   }
 }
@@ -520,7 +548,6 @@ function setLanguage(lang) {
   currentLang = lang;
   localStorage.setItem('skhatka_lang', lang);
   
-  // Update buttons
   document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.classList.remove('active');
     if (btn.textContent.toLowerCase() === lang) {
@@ -528,14 +555,12 @@ function setLanguage(lang) {
     }
   });
   
-  // Update current day
   const todayIndex = new Date().getDay();
   currentDay = translations[lang].days.full[todayIndex];
   if (!translations[lang].tasks[currentDay]) {
     currentDay = lang === 'ru' ? "Понедельник" : "Monday";
   }
   
-  // Update UI texts
   document.documentElement.lang = lang;
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
@@ -571,10 +596,13 @@ function calcEarned(required, points, qty) {
   return Math.floor((qty / required) * points);
 }
 
-function renderDay() {
+function renderDay(direction) {
   const panel = document.getElementById("dayPanel");
   const t = translations[currentLang];
   const tasks = t.tasks[currentDay];
+  
+  // Сбросить предыдущую анимацию
+  panel.classList.remove('animate-slide-left', 'animate-slide-right');
   
   if (!tasks) {
     panel.innerHTML = `<div class="empty">${t.noTasksSunday}</div>`;
@@ -613,7 +641,14 @@ function renderDay() {
   });
   updateTotal();
   
-  // Add touch event listeners to panel
+  // Применить анимацию, если указано направление
+  if (direction) {
+    // Принудительный reflow для перезапуска анимации
+    void panel.offsetWidth;
+    panel.classList.add(direction === 'left' ? 'animate-slide-left' : 'animate-slide-right');
+  }
+  
+  // Touch event listeners
   panel.removeEventListener('touchstart', handleTouchStart);
   panel.removeEventListener('touchend', handleTouchEnd);
   panel.addEventListener('touchstart', handleTouchStart, {passive: true});
