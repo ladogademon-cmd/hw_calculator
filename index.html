@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Калькулятор очков — Схватка</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #262626;
+    color: #e5e5e5;
+    min-height: 100vh;
+    padding: 16px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 {
+    text-align: center;
+    font-size: 26px;
+    margin-bottom: 20px;
+    color: #f59e0b;
+    font-weight: 700;
+  }
+  .tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+  .tab {
+    flex: 1;
+    padding: 10px 8px;
+    background: #171717;
+    border: 1px solid #404040;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #a3a3a3;
+    transition: all 0.2s;
+    user-select: none;
+    text-align: center;
+    min-width: 0;
+    white-space: nowrap;
+  }
+  .tab:hover { background: #262626; color: #e5e5e5; }
+  .tab.active {
+    background: #f59e0b;
+    color: #171717;
+    border-color: #f59e0b;
+  }
+  .tab.today::after {
+    content: " •";
+    color: #84cc16;
+    font-size: 18px;
+  }
+  .tab-full { display: inline; }
+  .tab-short { display: none; }
+  .day-panel {
+    background: #171717;
+    border: 1px solid #404040;
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .task {
+    display: grid;
+    grid-template-columns: 1fr 100px 90px 110px;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    background: #0a0a0a;
+    border-left: 3px solid #f59e0b;
+    border-radius: 6px;
+    transition: background 0.2s;
+  }
+  .task:hover { background: #141414; }
+  .task-name { font-size: 15px; line-height: 1.4; color: #e5e5e5; }
+  .task-pts {
+    text-align: right;
+    font-weight: 600;
+    color: #f59e0b;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .task-pts small { color: #a3a3a3; font-weight: 400; font-size: 11px; }
+  .task-input {
+    width: 100%;
+    padding: 10px;
+    background: #0a0a0a;
+    border: 1px solid #404040;
+    border-radius: 6px;
+    color: #e5e5e5;
+    font-size: 16px;
+    text-align: center;
+    font-weight: 600;
+    -moz-appearance: textfield;
+    min-height: 44px;
+  }
+  .task-input::-webkit-outer-spin-button,
+  .task-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .task-input:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+  }
+  .task-earned {
+    text-align: right;
+    font-weight: 700;
+    color: #2dd4bf;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .total-bar {
+    margin-top: 20px;
+    padding: 20px;
+    background: #171717;
+    border: 2px solid #f59e0b;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .total-label { font-size: 18px; font-weight: 600; color: #e5e5e5; }
+  .total-value {
+    font-size: 32px;
+    font-weight: 800;
+    color: #2dd4bf;
+  }
+  .reset-btn {
+    padding: 12px 22px;
+    background: #ef4444;
+    border: 1px solid #ef4444;
+    color: #ffffff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+    min-height: 44px;
+  }
+  .reset-btn:hover { background: #dc2626; }
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #a3a3a3;
+    font-size: 16px;
+  }
+
+  /* Мобильная версия */
+  @media (max-width: 640px) {
+    body { padding: 10px; }
+    h1 { font-size: 22px; margin-bottom: 14px; }
+    .tabs { gap: 4px; margin-bottom: 14px; }
+    .tab { padding: 9px 4px; font-size: 12px; }
+    .tab-full { display: none; }
+    .tab-short { display: inline; }
+    .day-panel { padding: 10px; }
+    .task {
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .task-name { font-size: 14px; }
+    .task-pts {
+      text-align: left;
+      font-size: 13px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #262626;
+    }
+    .task-bottom {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .task-input-wrap { flex: 1; }
+    .task-input { min-height: 44px; font-size: 16px; }
+    .task-earned {
+      text-align: right;
+      min-width: 80px;
+      font-size: 15px;
+    }
+    .total-bar { padding: 16px; flex-direction: column; align-items: stretch; }
+    .total-label { font-size: 16px; text-align: center; }
+    .total-value { font-size: 28px; text-align: center; }
+    .reset-btn { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>⚔️ Калькулятор очков — Схватка</h1>
+  <div class="tabs" id="tabs"></div>
+  <div class="day-panel" id="dayPanel"></div>
+  <div class="total-bar">
+    <div>
+      <div class="total-label">Итого за день:</div>
+      <div class="total-value" id="totalValue">0</div>
+    </div>
+    <button class="reset-btn" onclick="resetDay()">🧹 Сбросить</button>
+  </div>
+</div>
+
+<script>
+const DAYS = {
+  "Понедельник": [
+    ["Увеличь на 3 мощь Титанов", 3, 100],
+    ["Победи 1 Монстра ур. 1 или выше", 1, 2000],
+    ["Зачисти Лагерь Бандитов 1 раз", 1, 2500],
+    ["Собери 3000 Еды на карте", 3000, 10],
+    ["Собери 3000 Дерева на карте", 3000, 10],
+    ["Собери 600 Камня на карте", 600, 10],
+    ["Собери 150 Железа на карте", 150, 10],
+    ["Победи босса 1 раз", 1, 850],
+    ["Открой 1 раз сферу призыва", 1, 1500],
+    ["Открой 1 раз сферу стихий", 1, 1200],
+    ["Сразись 1 раз на Арене", 1, 6000],
+    ["Открой 1 сундук в Башне", 1, 4000],
+    ["Выполни 1 ежедневное задание", 1, 2000],
+    ["Потрать 15 Искр мощи", 15, 30],
+    ["Открой 1 раз Героический сундук", 1, 4000],
+    ["Получи 1 VIP очков", 1, 100]
+  ],
+  "Вторник": [
+    ["Победи 1 Монстра ур. 1 или выше", 1, 2000],
+    ["Победи босса 1 раз", 1, 850],
+    ["Потрать 1 фрагмент артефактов Героя", 1, 1200],
+    ["Потрать 15 камней облика Героя", 15, 700],
+    ["Открой 1 раз Артефактный сундук", 1, 750],
+    ["Сразись 1 раз на Арене", 1, 6000],
+    ["Начни 1 Экспедицию", 1, 5000],
+    ["Открой 1 сундук в Башне", 1, 4000],
+    ["Выполни 1 ежедневное задание", 1, 2000],
+    ["Используй 100 зелий Титана", 100, 150],
+    ["Получи 1 VIP очков", 1, 100]
+  ],
+  "Среда": [
+    ["Повысь мощь исследованиями на 1", 1, 30],
+    ["Используй ускорение исследований на 1 мин", 1, 300],
+    ["Зачисти Лагерь Бандитов", 1, 2500],
+    ["Надень 1 красный предмет", 1, 1250000],
+    ["Надень 1 оранжевый предмет", 1, 160000],
+    ["Надень 1 фиолетовый предмет", 1, 27000],
+    ["Надень 1 синий предмет", 1, 5000],
+    ["Надень 1 зеленый предмет", 1, 1000],
+    ["Надень 1 белый предмет", 1, 400],
+    ["Потрать 1 фрагмент артефактов Героев", 1, 1200],
+    ["Выполни 1 ежедневное задание", 1, 2000],
+    ["Открой 1 сундук в Башне", 1, 4000],
+    ["Получи 1 Камень души Героя", 1, 500],
+    ["Потрать 25 Пыльцы Феи", 25, 50],
+    ["Потрать 3 Энергии", 3, 100],
+    ["Получи 1 VIP очков", 1, 100]
+  ],
+  "Четверг": [
+    ["Потрать 1 руководство командиров", 1, 5000],
+    ["Победи 1 Монстра ур. 1 или выше", 1, 2000],
+    ["Потрать 100 рунных сфер", 100, 50000],
+    ["Потрать 20 рунных камней", 20, 100],
+    ["Получи 1 мощи героя", 1, 30],
+    ["Сразись 1 раз на Гранд Арене", 1, 6000],
+    ["Сразись 1 раз на Арене", 1, 6000],
+    ["Выполни 1 ежедневноное задание", 1, 2000],
+    ["Потрать 15 Камней облика Титана", 15, 100],
+    ["Открой 1 раз Героический сундук", 1, 4000],
+    ["Получи 1 VIP очков", 1, 100]
+  ],
+  "Пятница": [
+    ["Зачисти Лагерь Бандитов", 1, 2500],
+    ["Надень 1 красный предмет", 1, 1250000],
+    ["Надень 1 оранжевый предмет", 1, 160000],
+    ["Надень 1 фиолетовый предмет", 1, 27000],
+    ["Надень 1 синий предмет", 1, 5000],
+    ["Надень 1 зеленый предмет", 1, 1000],
+    ["Надень 1 белый предмет", 1, 400],
+    ["Потрать 15 Камней облика Героя", 15, 700],
+    ["Открой 1 раз сферу призыва", 1, 1500],
+    ["Выполни 1 ежедневное задание", 1, 2000],
+    ["Начни 1 Экспедицию", 1, 5000],
+    ["Сразись 1 раз на Арене", 1, 6000],
+    ["Потрать 25 Пыльцы Феи", 25, 50],
+    ["Получи 1 VIP очков", 1, 100]
+  ],
+  "Суббота": [
+    ["Потрать 10 осколков реликвии", 10, 225000],
+    ["Используй ускорение исследований на 1 мин.", 1, 300],
+    ["Победи босса 1 раз", 1, 850],
+    ["Зачисти Лагерь Бандитов 1 раз", 1, 2500],
+    ["Открой 1 сундук в Башне", 1, 4000],
+    ["Сразись 1 раз на Арене", 1, 6000],
+    ["Выполни 1 ежедневное задание", 1, 2000],
+    ["Используй 100 зелий Титана", 100, 150],
+    ["Потрать 15 кристаллов мастерства", 15, 200],
+    ["Потрать 1 Ядро Хаоса", 1, 3000],
+    ["Получи 1 VIP очков", 1, 100]
+  ]
+};
+
+const DAY_NAMES = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
+const DAY_SHORT_NAMES = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+const DAY_ORDER = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
+
+let currentDay = DAY_NAMES[new Date().getDay()];
+if (!DAYS[currentDay]) currentDay = "Понедельник";
+
+const inputs = {};
+DAY_ORDER.forEach(d => inputs[d] = new Array(DAYS[d].length).fill(0));
+
+function renderTabs() {
+  const tabsEl = document.getElementById("tabs");
+  tabsEl.innerHTML = "";
+  const todayName = DAY_NAMES[new Date().getDay()];
+  DAY_ORDER.forEach((day, index) => {
+    const shortName = DAY_SHORT_NAMES[index + 1];
+    const tab = document.createElement("div");
+    tab.className = "tab" + (day === currentDay ? " active" : "") + (day === todayName ? " today" : "");
+    tab.innerHTML = `<span class="tab-full">${day}</span><span class="tab-short">${shortName}</span>`;
+    tab.title = day;
+    tab.onclick = () => { currentDay = day; renderTabs(); renderDay(); };
+    tabsEl.appendChild(tab);
+  });
+}
+
+function calcEarned(required, points, qty) {
+  if (qty <= 0) return 0;
+  return Math.floor((qty / required) * points);
+}
+
+function renderDay() {
+  const panel = document.getElementById("dayPanel");
+  const tasks = DAYS[currentDay];
+  if (!tasks) {
+    panel.innerHTML = '<div class="empty">📭 На воскресенье заданий нет.<br>Выберите другой день.</div>';
+    document.getElementById("totalValue").textContent = "0 очков";
+    return;
+  }
+  panel.innerHTML = "";
+  tasks.forEach((t, i) => {
+    const [name, required, points] = t;
+    const qty = inputs[currentDay][i];
+    const earned = calcEarned(required, points, qty);
+    const row = document.createElement("div");
+    row.className = "task";
+    row.innerHTML = `
+      <div class="task-name">${name}</div>
+      <div class="task-pts">${points.toLocaleString('ru-RU')} <small>оч.</small></div>
+      <div class="task-input-wrap">
+        <input type="number" class="task-input" min="0" inputmode="numeric" value="${qty || ''}" placeholder="0" data-idx="${i}">
+      </div>
+      <div class="task-earned" data-idx="${i}">${earned > 0 ? earned.toLocaleString('ru-RU') + ' оч.' : ''}</div>
+    `;
+    const input = row.querySelector("input");
+    input.addEventListener("input", (e) => {
+      const v = parseInt(e.target.value) || 0;
+      inputs[currentDay][i] = v;
+      const earned = calcEarned(required, points, v);
+      row.querySelector(".task-earned").textContent = earned > 0 ? earned.toLocaleString('ru-RU') + ' оч.' : '';
+      updateTotal();
+    });
+    panel.appendChild(row);
+  });
+  updateTotal();
+}
+
+function updateTotal() {
+  const tasks = DAYS[currentDay] || [];
+  let total = 0;
+  tasks.forEach((t, i) => {
+    total += calcEarned(t[1], t[2], inputs[currentDay][i] || 0);
+  });
+  document.getElementById("totalValue").textContent = total.toLocaleString('ru-RU') + " очков";
+}
+
+function resetDay() {
+  if (!confirm("Обнулить все значения за " + currentDay + "?")) return;
+  inputs[currentDay] = new Array(DAYS[currentDay].length).fill(0);
+  renderDay();
+}
+
+renderTabs();
+renderDay();
+</script>
+</body>
+</html>
