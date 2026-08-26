@@ -29,6 +29,9 @@
   }
   .tab {
     flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 10px 8px;
     background: #171717;
     border: 1px solid #404040;
@@ -41,7 +44,8 @@
     user-select: none;
     text-align: center;
     min-width: 0;
-    white-space: nowrap;
+    min-height: 42px;
+    line-height: 1.2;
   }
   .tab:hover { background: #262626; color: #e5e5e5; }
   .tab.active {
@@ -50,9 +54,11 @@
     border-color: #f59e0b;
   }
   .tab.today::after {
-    content: " •";
+    content: "•";
     color: #84cc16;
     font-size: 18px;
+    margin-left: 4px;
+    line-height: 1;
   }
   .tab-full { display: inline; }
   .tab-short { display: none; }
@@ -157,7 +163,7 @@
     body { padding: 10px; }
     h1 { font-size: 22px; margin-bottom: 14px; }
     .tabs { gap: 4px; margin-bottom: 14px; }
-    .tab { padding: 9px 4px; font-size: 12px; }
+    .tab { padding: 9px 4px; font-size: 12px; min-height: 38px; }
     .tab-full { display: none; }
     .tab-short { display: inline; }
     .day-panel { padding: 10px; }
